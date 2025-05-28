@@ -108,6 +108,7 @@ process create_visualization {
 
     script:
     """
+    mamba install -y -c conda-forge altair pandas vl-convert-python
     python ${plot_script} ${containment_csv} \\
         --output-plot containment.png \\
         --output-csv containment.csv \\

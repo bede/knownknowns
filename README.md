@@ -32,12 +32,10 @@ nextflow run main.nf \
 
 ## Outputs
 
-The workflow generates the following outputs in the specified output directory:
-
-- `refs.sig` - Sourmash signature file for references
-- `reads.sig` - Sourmash signature file for reads
+- `refs.sig` - Sourmash signatures for references
+- `reads.sig` - Sourmash signature for reads
 - `containment.csv` - Containment analysis results
-- `containment.png` - Bar chart visualization (2x resolution)
+- `containment.png` - Bar chart
 
 **Example plot**
 ![Example containment.png](containment.png "Example containment.png")
