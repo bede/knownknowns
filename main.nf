@@ -92,8 +92,8 @@ process calculate_containment {
     """
 }
 
-process create_visualization {
-    tag "visualization"
+process plot {
+    tag "plot"
     publishDir "${params.outdir}", mode: 'copy'
 
     conda 'conda-forge::altair conda-forge::pandas conda-forge::vl-convert-python'
@@ -108,7 +108,6 @@ process create_visualization {
 
     script:
     """
-    mamba install -y -c conda-forge altair pandas vl-convert-python
     python ${plot_script} ${containment_csv} \\
         --output-plot containment.png \\
         --output-csv containment.csv \\
@@ -123,7 +122,7 @@ workflow {
     refs_sig = sketch_references(references_ch)
     reads_sig = sketch_reads(reads_ch)
     containment_csv = calculate_containment(reads_sig, refs_sig)
-    create_visualization(containment_csv, plot_script_ch)
+    plot(containment_csv, plot_script_ch)
 }
 
 workflow.onComplete {
