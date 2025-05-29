@@ -30,10 +30,8 @@ nextflow run main.nf \
 
 ## Outputs
 
-- `refs.sig` - Sourmash signatures for references
-- `reads.sig` - Sourmash signature for reads
-- `containment.csv` - Containment analysis results
-- `containment.png` - Bar chart
+- `containment.csv` - Containment results
+- `containment.png` - Bar chart of containment by ref sequence
 
 **Example plot**
 ![Example containment.png](containment.png "Example containment.png")
