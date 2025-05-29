@@ -14,7 +14,6 @@ if (!params.reads) {
 
 process sketch_references {
     tag "sketch_refs"
-    publishDir "${params.outdir}", mode: 'copy'
 
     conda 'bioconda::sourmash'
 
@@ -36,7 +35,6 @@ process sketch_references {
 
 process sketch_reads {
     tag "sketch_reads"
-    publishDir "${params.outdir}", mode: 'copy'
 
     conda 'bioconda::sourmash'
 
@@ -44,7 +42,7 @@ process sketch_reads {
     path reads
 
     output:
-    path "reads.sig"
+    tuple path(reads), path("reads.sig")
 
     script:
     """
@@ -57,16 +55,15 @@ process sketch_reads {
 
 process calculate_containment {
     tag "containment"
-    publishDir "${params.outdir}", mode: 'copy'
 
     conda 'bioconda::sourmash'
 
     input:
-    path reads_sig
+    tuple path(reads), path(reads_sig)
     path refs_sig
 
     output:
-    path "containment.csv"
+    tuple path(reads), path("containment.csv")
 
     script:
     """
@@ -99,18 +96,18 @@ process plot {
     conda 'conda-forge::altair conda-forge::pandas conda-forge::vl-convert-python'
 
     input:
-    path containment_csv
+    tuple path(reads), path(containment_csv)
     path plot_script
 
     output:
-    path "containment.png", optional: true
-    path "containment.csv"
+    path "${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.png", optional: true
+    path "${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.csv"
 
     script:
     """
     python ${plot_script} ${containment_csv} \\
-        --output-plot containment.png \\
-        --output-csv containment.csv \\
+        --output-plot ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.png \\
+        --output-csv ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.csv \\
         --debug
     """
 }
@@ -120,16 +117,11 @@ workflow {
     reads_ch = Channel.fromPath(params.reads, checkIfExists: true)
     plot_script_ch = Channel.fromPath("$projectDir/plot_containment.py", checkIfExists: true)
     refs_sig = sketch_references(references_ch)
-    reads_sig = sketch_reads(reads_ch)
-    containment_csv = calculate_containment(reads_sig, refs_sig)
-    plot(containment_csv, plot_script_ch)
+    reads_with_sig = sketch_reads(reads_ch)
+    containment_with_reads = calculate_containment(reads_with_sig, refs_sig)
+    plot(containment_with_reads, plot_script_ch)
 }
 
 workflow.onComplete {
     println "Workflow completed successfully!"
-    println "Results are available in: ${params.outdir}"
-    println "- refs.sig: Reference sketches"
-    println "- reads.sig: Reads sketches"
-    println "- containment.csv: Containment analysis results"
-    println "- containment.png: Visualization (2x resolution)"
 }
