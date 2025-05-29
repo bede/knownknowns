@@ -21,6 +21,7 @@ def main():
         "--output-csv", default="containment.csv", help="Output CSV filename"
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument("--title-prefix", default="", help="Prefix for the plot title")
 
     args = parser.parse_args()
 
@@ -84,7 +85,11 @@ def main():
                 tooltip=["name:N", "similarity:Q"]
                 + (["md5:N"] if "md5" in df.columns else []),
             )
-            .properties(width=600, height=alt.Step(20), title="31mer containment")
+            .properties(
+                width=600,
+                height=alt.Step(20),
+                title=f"{args.title_prefix + ' ' if args.title_prefix else ''}31mer containment",
+            )
             .resolve_scale(y="independent")
         )
 

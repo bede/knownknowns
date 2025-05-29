@@ -108,6 +108,7 @@ process plot {
     python ${plot_script} ${containment_csv} \\
         --output-plot ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.png \\
         --output-csv ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.csv \\
+        --title-prefix ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')} \\
         --debug
     """
 }
