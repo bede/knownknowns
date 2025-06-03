@@ -55,6 +55,7 @@ process sketch_reads {
 
 process calculate_containment {
     tag "containment"
+    memory '4 GB'
 
     conda 'bioconda::sourmash'
 
