@@ -69,11 +69,6 @@ process calculate_containment {
     """
     echo "Input files:"
     ls -la
-    echo "Reads signature info:"
-    sourmash sig describe reads_signature.sig
-    echo "References signature info:"
-    sourmash sig describe ${refs_sig}
-
     echo "Running sourmash search..."
     sourmash search \\
         --max-containment \\
