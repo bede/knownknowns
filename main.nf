@@ -59,8 +59,8 @@ process calculate_containment {
     conda 'bioconda::sourmash'
 
     input:
-    tuple path(reads), path(reads_sig)
-    path refs_sig
+    tuple path(reads), path(reads_sig, stageAs: 'reads_signature.sig')
+    path refs_sig, stageAs: 'refs_signature.sig'
 
     output:
     tuple path(reads), path("containment.csv")
@@ -70,7 +70,7 @@ process calculate_containment {
     echo "Input files:"
     ls -la
     echo "Reads signature info:"
-    sourmash sig describe ${reads_sig}
+    sourmash sig describe reads_signature.sig
     echo "References signature info:"
     sourmash sig describe ${refs_sig}
 
@@ -79,7 +79,7 @@ process calculate_containment {
         --max-containment \\
         -t 0.0 \\
         -o containment.csv \\
-        ${reads_sig} \\
+        reads_signature.sig \\
         ${refs_sig}
 
     echo "Output file info:"
@@ -117,8 +117,23 @@ workflow {
     references_ch = Channel.fromPath(params.references, checkIfExists: true)
     reads_ch = Channel.fromPath(params.reads, checkIfExists: true)
     plot_script_ch = Channel.fromPath("$projectDir/plot_containment.py", checkIfExists: true)
-    refs_sig = sketch_references(references_ch)
-    reads_with_sig = sketch_reads(reads_ch)
+
+    // Check if reads file is a signature
+    if (params.references.endsWith('.sig')) {
+        refs_sig = references_ch
+    } else {
+        // We must first sketch
+        refs_sig = sketch_references(references_ch)
+    }
+
+    // Check if reads file is a signature
+    if (params.reads.endsWith('.sig')) {
+        reads_with_sig = reads_ch.map { reads -> tuple(reads, reads) }
+    } else {
+        // We must first sketch
+        reads_with_sig = sketch_reads(reads_ch)
+    }
+
     containment_with_reads = calculate_containment(reads_with_sig, refs_sig)
     plot(containment_with_reads, plot_script_ch)
 }
