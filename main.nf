@@ -55,7 +55,9 @@ process sketch_reads {
 
 process calculate_containment {
     tag "containment"
-    memory '4 GB'
+    memory { 4.GB * task.attempt }
+    maxRetries 3
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
 
     conda 'bioconda::sourmash'
 
