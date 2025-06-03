@@ -1,8 +1,8 @@
 # Knownknowns
 
-> there are known knowns; there are things we know we know
+> [there are known knowns; there are things we know we know](https://en.wikipedia.org/wiki/There_are_unknown_unknowns)
 
-A simple workflow for quickly estimating the containment of one or more genomes in a FASTQ file using Sourmash. Useful for validating spike in controls. Plots and outputs containment values in CSV format.
+A simple workflow for quickly estimating a FASTQ's containment of target genomes using Sourmash. Useful for validating spike-in positive controls. Plots and outputs containment values in CSV format.
 
 ## Requirements
 
