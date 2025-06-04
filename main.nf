@@ -15,7 +15,7 @@ if (!params.reads) {
 process sketch_references {
     tag "sketch_refs"
 
-    conda 'bioconda::sourmash'
+    conda 'bioconda::sourmash conda-forge::sourmash_plugin_branchwater'
 
     input:
     path references
@@ -36,7 +36,7 @@ process sketch_references {
 process sketch_reads {
     tag "sketch_reads"
 
-    conda 'bioconda::sourmash'
+    conda 'bioconda::sourmash conda-forge::sourmash_plugin_branchwater'
 
     input:
     path reads
@@ -46,8 +46,8 @@ process sketch_reads {
 
     script:
     """
-    sourmash sketch dna \\
-        -p k=31,scaled=100,noabund \\
+    sourmash scripts singlesketch \\
+        -p k=31,scaled=100,noabund,dna \\
         -o reads.sig \\
         ${reads}
     """
@@ -59,7 +59,7 @@ process calculate_containment {
     maxRetries 3
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
 
-    conda 'bioconda::sourmash'
+    conda 'bioconda::sourmash conda-forge::sourmash_plugin_branchwater'
 
     input:
     tuple path(reads), path(reads_sig, stageAs: 'reads_signature.sig')
@@ -91,7 +91,7 @@ process plot {
     tag "plot"
     publishDir "${params.outdir}", mode: 'copy'
 
-    conda 'conda-forge::altair conda-forge::pandas conda-forge::vl-convert-python'
+    conda 'conda-forge::pandas conda-forge::altair conda-forge::vl-convert-python'
 
     input:
     tuple path(reads), path(containment_csv)
