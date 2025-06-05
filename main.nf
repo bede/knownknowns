@@ -13,8 +13,6 @@ if (!params.reads) {
 }
 
 process sketch_references {
-    tag "sketch_refs"
-
     conda 'bioconda::sourmash conda-forge::sourmash_plugin_branchwater'
 
     input:
@@ -34,8 +32,6 @@ process sketch_references {
 }
 
 process sketch_reads {
-    tag "sketch_reads"
-
     conda 'bioconda::sourmash conda-forge::sourmash_plugin_branchwater'
 
     input:
@@ -54,7 +50,6 @@ process sketch_reads {
 }
 
 process calculate_containment {
-    tag "containment"
     memory { 4.GB * task.attempt }
     maxRetries 3
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
@@ -88,7 +83,6 @@ process calculate_containment {
 }
 
 process plot {
-    tag "plot"
     publishDir "${params.outdir}", mode: 'copy'
 
     conda 'conda-forge::pandas conda-forge::altair conda-forge::vl-convert-python'
@@ -137,5 +131,5 @@ workflow {
 }
 
 workflow.onComplete {
-    println "Workflow completed successfully!"
+    println "🦜🦜🦜"
 }

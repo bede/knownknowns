@@ -25,7 +25,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Debug: Check file contents
     if args.debug:
         print(f"CSV file size: {os.path.getsize(args.input_csv)} bytes")
         print("CSV file contents:")
@@ -59,26 +58,33 @@ def main():
                 f.write("No matches found")
             return
 
-        # PNG export
         alt.data_transformers.enable("json")
 
-        # Check required columns exist
         required_cols = ["name", "similarity"]
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
             print(f"ERROR: Missing required columns: {missing_cols}")
             print(f"Available columns: {list(df.columns)}")
-            # Create error PNG
             with open(args.output_plot, "w") as f:
                 f.write(f"Missing columns: {missing_cols}")
             return
 
-        # Create the Altair chart
+        # If name contains space, sort bars by name after first space
+        def get_sort_key(name):
+            if " " in name:
+                return name.split(" ", 1)[1]  # Substring after first space
+            else:
+                return name.split(" ")[0]  # First part (whole name if no space)
+
+        df["sort_key"] = df["name"].apply(get_sort_key)
+        df = df.sort_values("sort_key")
+        df = df.drop("sort_key", axis=1)
+
         chart = (
             alt.Chart(df)
             .mark_bar(size=8)
             .encode(
-                y=alt.Y("name:N", title="", sort="-x"),
+                y=alt.Y("name:N", title="", sort=list(df["name"])),
                 x=alt.X(
                     "similarity:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
                 ),
@@ -88,17 +94,12 @@ def main():
             .properties(
                 width=600,
                 height=alt.Step(20),
-                title=f"{args.title_prefix + ' ' if args.title_prefix else ''}31mer containment",
+                title=f"{args.title_prefix + ' ' if args.title_prefix else ''} containment",
             )
             .resolve_scale(y="independent")
         )
 
         chart.save(args.output_plot, scale_factor=2)
-
-        print(f"Created visualization with {len(df)} reference sequences")
-        print(
-            f"Containment scores range: {df['similarity'].min():.3f} - {df['similarity'].max():.3f}"
-        )
         print(f"Plot saved to: {args.output_plot}")
         print(f"CSV saved to: {args.output_csv}")
 

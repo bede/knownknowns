@@ -2,7 +2,7 @@
 
 > [there are known knowns; there are things we know we know](https://en.wikipedia.org/wiki/There_are_unknown_unknowns)
 
-A simple workflow for quickly estimating a FASTQ's containment of target genomes using Sourmash. Useful for validating spike-in positive controls. Plots and outputs containment values in CSV format.
+A workflow for quickly estimating the containment of one or more genomes in a FASTQ file. Plots and outputs containment values in CSV format.
 
 ## Requirements
 
@@ -11,7 +11,7 @@ A simple workflow for quickly estimating a FASTQ's containment of target genomes
 
 ## Usage
 
-### Default (conda)
+### Default (uses conda)
 
 ```bash
 nextflow run main.nf \
@@ -19,7 +19,7 @@ nextflow run main.nf \
     --reads test/data/mn908947.fastq.gz \
 ```
 
-### Docker profile
+### Docker
 
 ```bash
 nextflow run main.nf \
@@ -27,6 +27,10 @@ nextflow run main.nf \
     --reads test/data/mn908947.fastq.gz \
     -profile docker
 ```
+
+### Signature input
+
+`--reads` and `--references` both also accept presketched Sourmash sketches (`.sig`) created with `sourmash sketch`.
 
 ## Outputs
 
