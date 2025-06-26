@@ -22,6 +22,9 @@ def main():
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--title-prefix", default="", help="Prefix for the plot title")
+    parser.add_argument(
+        "--kmer", type=int, default=31, help="K-mer length used for sketching"
+    )
 
     args = parser.parse_args()
 
@@ -94,7 +97,7 @@ def main():
             .properties(
                 width=600,
                 height=alt.Step(20),
-                title=f"{args.title_prefix + ' ' if args.title_prefix else ''} containment",
+                title=f"{args.title_prefix + ' ' if args.title_prefix else ''}containment (k={args.kmer})",
             )
             .resolve_scale(y="independent")
         )

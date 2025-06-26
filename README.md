@@ -2,7 +2,7 @@
 
 > [there are known knowns; there are things we know we know](https://en.wikipedia.org/wiki/There_are_unknown_unknowns)
 
-A workflow for quickly estimating the containment of one or more genomes in a FASTQ file. Plots and outputs containment values in CSV format.
+A workflow for quickly estimating the containment of one or more genomes in a FASTQ file. Plots and outputs containment values in CSV format. Control *k*-mer length (default 31) with `--kmer`.
 
 ## Requirements
 

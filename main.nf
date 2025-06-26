@@ -4,6 +4,7 @@ nextflow.enable.dsl = 2
 params.references = null
 params.reads = null
 params.outdir = "results"
+params.kmer = 31
 
 if (!params.references) {
     error "Please provide a references file with --references"
@@ -25,7 +26,7 @@ process sketch_references {
     """
     sourmash sketch dna \\
         --singleton \\
-        -p k=31,scaled=100,noabund \\
+        -p k=${params.kmer},scaled=100,noabund \\
         -o refs.sig \\
         ${references}
     """
@@ -43,7 +44,7 @@ process sketch_reads {
     script:
     """
     sourmash scripts singlesketch \\
-        -p k=31,scaled=100,noabund,dna \\
+        -p k=${params.kmer},scaled=100,noabund,dna \\
         -o reads.sig \\
         ${reads}
     """
@@ -101,6 +102,7 @@ process plot {
         --output-plot ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.png \\
         --output-csv ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.csv \\
         --title-prefix ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')} \\
+        --kmer ${params.kmer} \\
         --debug
     """
 }
