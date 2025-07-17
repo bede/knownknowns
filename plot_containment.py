@@ -32,6 +32,11 @@ def main():
         action="store_true",
         help="Create combined plot from multiple CSV files",
     )
+    parser.add_argument(
+        "--no-plot",
+        action="store_true",
+        help="Skip plot generation, only process CSV files",
+    )
 
     args = parser.parse_args()
 
@@ -77,6 +82,11 @@ def create_single_plot(args):
             # Create a dummy PNG file
             with open(args.output_plot, "w") as f:
                 f.write("No matches found")
+            return
+
+        # Skip plotting if requested
+        if args.no_plot:
+            print(f"Skipping plot generation. CSV saved to: {args.output_csv}")
             return
 
         alt.data_transformers.enable("json")
@@ -168,6 +178,11 @@ def create_combined_plot(args):
 
         # Get unique sample names for ordering
         barcode_order = list(combined_df["barcode"].unique())
+
+        # Skip plotting if requested
+        if args.no_plot:
+            print("Skipping plot generation. CSV data processed.")
+            return
 
         # Create the combined chart
         chart = (

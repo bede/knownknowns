@@ -7,6 +7,7 @@ params.references = null
 params.reads = null
 params.outdir = "results"
 params.kmer = 31
+params.plot = true
 
 if (!params.references) {
     error "Please provide a references file with --references"
@@ -100,7 +101,8 @@ process plot {
         --output-plot ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.png \\
         --output-csv ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.csv \\
         --title-prefix ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')} \\
-        --kmer ${params.kmer}
+        --kmer ${params.kmer} \\
+        ${params.plot ? '' : '--no-plot'}
     """
 }
 
@@ -122,7 +124,8 @@ process plot_combined {
     python ${plot_script} ${containment_csvs.join(' ')} \\
         --output-plot comparison.png \\
         --combined \\
-        --kmer ${params.kmer}
+        --kmer ${params.kmer} \\
+        ${params.plot ? '' : '--no-plot'}
     """
 }
 
@@ -153,12 +156,18 @@ workflow {
 
     // Main workflow: containment calculation and visualization
     containment_with_reads = calculate_containment(reads_with_sig, refs_sig.first())
-    (plot_pngs, plot_csvs) = plot(containment_with_reads, plot_script_ch.first())
     
-    // Create combined plot only for directory input
-    if (reads_path.isDirectory()) {
-        all_csvs = plot_csvs.collect()
-        plot_combined(all_csvs, plot_script_ch)
+    if (params.plot) {
+        (plot_pngs, plot_csvs) = plot(containment_with_reads, plot_script_ch.first())
+        
+        // Create combined plot only for directory input
+        if (reads_path.isDirectory()) {
+            all_csvs = plot_csvs.collect()
+            plot_combined(all_csvs, plot_script_ch)
+        }
+    } else {
+        // Just process CSV files without plotting
+        (plot_pngs, plot_csvs) = plot(containment_with_reads, plot_script_ch.first())
     }
 }
 
