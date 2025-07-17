@@ -7,6 +7,7 @@ params.references = null
 params.reads = null
 params.outdir = "results"
 params.kmer = 31
+params.scaled = 100
 params.plot = true
 
 if (!params.references) {
@@ -30,7 +31,7 @@ process sketch_references {
     """
     sourmash sketch dna \\
         --singleton \\
-        -p k=${params.kmer},scaled=100,noabund \\
+        -p k=${params.kmer},scaled=${params.scaled},noabund \\
         -o refs.sig \\
         ${references}
     """
@@ -49,7 +50,7 @@ process sketch_reads {
     script:
     """
     sourmash scripts singlesketch \\
-        -p k=${params.kmer},scaled=100,noabund,dna \\
+        -p k=${params.kmer},scaled=${params.scaled},noabund,dna \\
         -o reads.sig \\
         ${reads}
     """
