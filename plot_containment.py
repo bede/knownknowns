@@ -13,7 +13,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Create containment visualization from sourmash search results"
     )
-    parser.add_argument("input_csv", help="Input CSV file from sourmash search")
+    parser.add_argument(
+        "input_csv", nargs="+", help="Input CSV file(s) from sourmash search"
+    )
     parser.add_argument(
         "--output-plot", default="containment_plot.png", help="Output plot filename"
     )
@@ -25,28 +27,44 @@ def main():
     parser.add_argument(
         "--kmer", type=int, default=31, help="K-mer length used for sketching"
     )
+    parser.add_argument(
+        "--combined",
+        action="store_true",
+        help="Create combined plot from multiple CSV files",
+    )
 
     args = parser.parse_args()
 
+    # Route to appropriate plotting function
+    if args.combined:
+        create_combined_plot(args)
+    else:
+        create_single_plot(args)
+
+
+def create_single_plot(args):
+    """Create plot for a single CSV file."""
+    input_csv = args.input_csv[0]  # Single file mode
+
     if args.debug:
-        print(f"CSV file size: {os.path.getsize(args.input_csv)} bytes")
+        print(f"CSV file size: {os.path.getsize(input_csv)} bytes")
         print("CSV file contents:")
-        with open(args.input_csv) as f:
+        with open(input_csv) as f:
             content = f.read()
             print(repr(content))
 
-    if args.input_csv != args.output_csv:
-        shutil.copy(args.input_csv, args.output_csv)
+    if input_csv != args.output_csv:
+        shutil.copy(input_csv, args.output_csv)
 
     try:
-        if os.path.getsize(args.input_csv) == 0:
+        if os.path.getsize(input_csv) == 0:
             print("ERROR: CSV file is empty")
             # Create a dummy PNG file
             with open(args.output_plot, "w") as f:
                 f.write("No data to visualize - CSV file is empty")
             return
 
-        df = pd.read_csv(args.input_csv)
+        df = pd.read_csv(input_csv)
 
         if args.debug:
             print(f"CSV columns: {list(df.columns)}")
@@ -72,7 +90,7 @@ def main():
                 f.write(f"Missing columns: {missing_cols}")
             return
 
-        # If name contains space, sort bars by name after first space
+        # Sort bars by sequence name (after first space if present)
         def get_sort_key(name):
             if " " in name:
                 return name.split(" ", 1)[1]  # Substring after first space
@@ -112,6 +130,74 @@ def main():
 
         traceback.print_exc()
         # Create error PNG
+        with open(args.output_plot, "w") as f:
+            f.write(f"Error: {e}")
+        sys.exit(1)
+
+
+def create_combined_plot(args):
+    """Create combined plot from multiple CSV files."""
+    try:
+        # Read and combine all CSV files
+        dfs = []
+        for csv_file in args.input_csv:
+            if os.path.exists(csv_file) and os.path.getsize(csv_file) > 0:
+                df = pd.read_csv(csv_file)
+                if not df.empty and "name" in df.columns and "similarity" in df.columns:
+                    # Extract sample name from filename
+                    sample_name = os.path.basename(csv_file).replace(".csv", "")
+                    df = df.assign(barcode=sample_name)
+                    dfs.append(df)
+
+        if not dfs:
+            print("No valid CSV files found")
+            with open(args.output_plot, "w") as f:
+                f.write("No valid data files found")
+            return
+
+        # Combine all dataframes
+        combined_df = pd.concat(dfs, ignore_index=True)
+
+        # Extract short names for cleaner visualization
+        def extract_short_name(name):
+            if " " in name:
+                return name.split(" ", 1)[1]
+            return name
+
+        combined_df["short_name"] = combined_df["name"].apply(extract_short_name)
+
+        # Get unique sample names for ordering
+        barcode_order = list(combined_df["barcode"].unique())
+
+        # Create the combined chart
+        chart = (
+            alt.Chart(combined_df)
+            .mark_bar(size=8)
+            .encode(
+                y=alt.Y("short_name:N", title=""),
+                x=alt.X(
+                    "similarity:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
+                ),
+                color=alt.Color("barcode", sort=barcode_order, title=""),
+                yOffset=alt.YOffset("barcode:N", sort=barcode_order),
+                tooltip=["short_name:N", "similarity:Q", "barcode:N"],
+            )
+            .properties(
+                title=f"Combined containment analysis (k={args.kmer})",
+                width=400,
+                height=alt.Step(8),
+            )
+            .resolve_scale(y="independent")
+        )
+
+        chart.save(args.output_plot, scale_factor=2.0)
+        print(f"Combined plot saved to: {args.output_plot}")
+
+    except Exception as e:
+        print(f"Error creating combined plot: {e}")
+        import traceback
+
+        traceback.print_exc()
         with open(args.output_plot, "w") as f:
             f.write(f"Error: {e}")
         sys.exit(1)
