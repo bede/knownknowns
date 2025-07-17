@@ -148,73 +148,16 @@ def create_single_plot(args):
 def create_combined_plot(args):
     """Create combined plot from multiple CSV files."""
     try:
-        # Read and combine all CSV files
-        dfs = []
-        for csv_file in args.input_csv:
-            if os.path.exists(csv_file) and os.path.getsize(csv_file) > 0:
-                df = pd.read_csv(csv_file)
-                if not df.empty and "name" in df.columns and "similarity" in df.columns:
-                    # Extract sample name from filename
-                    sample_name = os.path.basename(csv_file).replace(".csv", "")
-                    df = df.assign(barcode=sample_name)
-                    dfs.append(df)
-
-        if not dfs:
-            print("No valid CSV files found")
-            # Create empty CSV file to satisfy Nextflow output requirement
-            empty_df = pd.DataFrame(columns=["name", "similarity", "barcode"])
-            empty_df.to_csv(args.output_csv, index=False)
-            print(f"Empty CSV saved to: {args.output_csv}")
-            with open(args.output_plot, "w") as f:
-                f.write("No valid data files found")
-            return
-
-        # Combine all dataframes
-        combined_df = pd.concat(dfs, ignore_index=True)
-
-        # Save combined CSV file
-        combined_df.to_csv(args.output_csv, index=False)
-        print(f"Combined CSV saved to: {args.output_csv}")
-
-        # Extract short names for cleaner visualization
-        def extract_short_name(name):
-            if " " in name:
-                return name.split(" ", 1)[1]
-            return name
-
-        combined_df["short_name"] = combined_df["name"].apply(extract_short_name)
-
-        # Get unique sample names for ordering
-        barcode_order = list(combined_df["barcode"].unique())
+        # First, create the combined CSV
+        create_combined_csv(args)
 
         # Skip plotting if requested
         if args.no_plot:
             print("Skipping plot generation. CSV data processed.")
             return
 
-        # Create the combined chart
-        chart = (
-            alt.Chart(combined_df)
-            .mark_bar(size=8)
-            .encode(
-                y=alt.Y("short_name:N", title=""),
-                x=alt.X(
-                    "similarity:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
-                ),
-                color=alt.Color("barcode", sort=barcode_order, title=""),
-                yOffset=alt.YOffset("barcode:N", sort=barcode_order),
-                tooltip=["short_name:N", "similarity:Q", "barcode:N"],
-            )
-            .properties(
-                title=f"Combined containment analysis (k={args.kmer})",
-                width=400,
-                height=alt.Step(8),
-            )
-            .resolve_scale(y="independent")
-        )
-
-        chart.save(args.output_plot, scale_factor=2.0)
-        print(f"Combined plot saved to: {args.output_plot}")
+        # Now create the plot from the combined CSV
+        create_plot_from_combined_csv(args)
 
     except Exception as e:
         print(f"Error creating combined plot: {e}")
@@ -224,6 +167,83 @@ def create_combined_plot(args):
         with open(args.output_plot, "w") as f:
             f.write(f"Error: {e}")
         sys.exit(1)
+
+
+def create_combined_csv(args):
+    """Create combined CSV from multiple individual CSV files."""
+    # Read and combine all CSV files
+    dfs = []
+    for csv_file in args.input_csv:
+        if os.path.exists(csv_file) and os.path.getsize(csv_file) > 0:
+            df = pd.read_csv(csv_file)
+            if not df.empty and "name" in df.columns and "similarity" in df.columns:
+                # Extract sample name from filename
+                sample_name = os.path.basename(csv_file).replace(".csv", "")
+                df = df.assign(barcode=sample_name)
+                dfs.append(df)
+
+    if not dfs:
+        print("No valid CSV files found")
+        # Create empty CSV file to satisfy Nextflow output requirement
+        empty_df = pd.DataFrame(columns=["name", "similarity", "barcode"])
+        empty_df.to_csv(args.output_csv, index=False)
+        print(f"Empty CSV saved to: {args.output_csv}")
+        return False
+
+    # Combine all dataframes
+    combined_df = pd.concat(dfs, ignore_index=True)
+
+    # Save combined CSV file
+    combined_df.to_csv(args.output_csv, index=False)
+    print(f"Combined CSV saved to: {args.output_csv}")
+    return True
+
+
+def create_plot_from_combined_csv(args):
+    """Create plot from the combined CSV file."""
+    # Read the combined CSV
+    combined_df = pd.read_csv(args.output_csv)
+
+    if combined_df.empty:
+        print("No data in combined CSV")
+        with open(args.output_plot, "w") as f:
+            f.write("No valid data found")
+        return
+
+    # Extract short names for cleaner visualization
+    def extract_short_name(name):
+        if " " in name:
+            return name.split(" ", 1)[1]
+        return name
+
+    combined_df["short_name"] = combined_df["name"].apply(extract_short_name)
+
+    # Get unique sample names for ordering
+    barcode_order = list(combined_df["barcode"].unique())
+
+    # Create the combined chart
+    chart = (
+        alt.Chart(combined_df)
+        .mark_bar(size=8)
+        .encode(
+            y=alt.Y("short_name:N", title=""),
+            x=alt.X(
+                "similarity:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
+            ),
+            color=alt.Color("barcode", sort=barcode_order, title=""),
+            yOffset=alt.YOffset("barcode:N", sort=barcode_order),
+            tooltip=["short_name:N", "similarity:Q", "barcode:N"],
+        )
+        .properties(
+            title=f"Combined containment analysis (k={args.kmer})",
+            width=400,
+            height=alt.Step(8),
+        )
+        .resolve_scale(y="independent")
+    )
+
+    chart.save(args.output_plot, scale_factor=2.0)
+    print(f"Combined plot saved to: {args.output_plot}")
 
 
 if __name__ == "__main__":
