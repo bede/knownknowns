@@ -161,12 +161,20 @@ def create_combined_plot(args):
 
         if not dfs:
             print("No valid CSV files found")
+            # Create empty CSV file to satisfy Nextflow output requirement
+            empty_df = pd.DataFrame(columns=["name", "similarity", "barcode"])
+            empty_df.to_csv(args.output_csv, index=False)
+            print(f"Empty CSV saved to: {args.output_csv}")
             with open(args.output_plot, "w") as f:
                 f.write("No valid data files found")
             return
 
         # Combine all dataframes
         combined_df = pd.concat(dfs, ignore_index=True)
+
+        # Save combined CSV file
+        combined_df.to_csv(args.output_csv, index=False)
+        print(f"Combined CSV saved to: {args.output_csv}")
 
         # Extract short names for cleaner visualization
         def extract_short_name(name):

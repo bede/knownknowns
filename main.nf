@@ -117,12 +117,14 @@ process plot_combined {
     path plot_script
 
     output:
-    path "comparison.png", optional: true
+    path "containment.png", optional: true
+    path "containment.csv"
 
     script:
     """
     python ${plot_script} ${containment_csvs.join(' ')} \\
-        --output-plot comparison.png \\
+        --output-plot containment.png \\
+        --output-csv containment.csv \\
         --combined \\
         --kmer ${params.kmer} \\
         ${params.plot ? '' : '--no-plot'}
