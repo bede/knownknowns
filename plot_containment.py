@@ -2,11 +2,17 @@
 
 import argparse
 import os
+import re
 import shutil
 import sys
 
 import altair as alt
 import pandas as pd
+
+
+def natural_sort_key(text):
+    """Generate a sort key for natural sorting of strings with numbers."""
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", text)]
 
 
 def main():
@@ -100,14 +106,14 @@ def create_single_plot(args):
                 f.write(f"Missing columns: {missing_cols}")
             return
 
-        # Sort bars by sequence name (after first space if present)
+        # Sort bars by sequence name (after first space if present) using natural sorting
         def get_sort_key(name):
             if " " in name:
                 return name.split(" ", 1)[1]  # Substring after first space
             else:
                 return name.split(" ")[0]  # First part (whole name if no space)
 
-        df["sort_key"] = df["name"].apply(get_sort_key)
+        df["sort_key"] = df["name"].apply(lambda x: natural_sort_key(get_sort_key(x)))
         df = df.sort_values("sort_key")
         df = df.drop("sort_key", axis=1)
 
@@ -218,15 +224,26 @@ def create_plot_from_combined_csv(args):
 
     combined_df["short_name"] = combined_df["name"].apply(extract_short_name)
 
-    # Get unique sample names for ordering
-    barcode_order = list(combined_df["barcode"].unique())
+    # Get unique sample names for ordering using natural sorting
+    barcode_order = sorted(combined_df["barcode"].unique(), key=natural_sort_key)
+
+    # Sort the dataframe by natural sort order for consistent bar positioning
+    combined_df["barcode_sort_key"] = combined_df["barcode"].apply(natural_sort_key)
+    combined_df["short_name_sort_key"] = combined_df["short_name"].apply(
+        natural_sort_key
+    )
+    combined_df = combined_df.sort_values(["short_name_sort_key", "barcode_sort_key"])
+    combined_df = combined_df.drop(["barcode_sort_key", "short_name_sort_key"], axis=1)
+
+    # Get naturally sorted unique short names for y-axis ordering
+    short_name_order = sorted(combined_df["short_name"].unique(), key=natural_sort_key)
 
     # Create the combined chart
     chart = (
         alt.Chart(combined_df)
         .mark_bar(size=8)
         .encode(
-            y=alt.Y("short_name:N", title=""),
+            y=alt.Y("short_name:N", title="", sort=short_name_order),
             x=alt.X(
                 "similarity:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
             ),
