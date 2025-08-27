@@ -16,7 +16,7 @@ A workflow for quickly estimating the containment of sequences in a fasta file (
 ```bash
 nextflow run main.nf \
     --references test/data/mn908947.fa \
-    --reads test/data/mn908947.fastq.gz \
+    --reads test/data/mn908947.fastq.gz
 ```
 
 ### Docker
@@ -35,6 +35,12 @@ nextflow run main.nf \
 ### Multiple FASTQ input
 
 `--reads` can accept either a single `fastq.[gz]` file or a path to a directory containing many `fastq.[gz]` files (one per sample). Both sample-level plots and a combined plot showing containment across samples is generated upon completion.
+
+```bash
+nextflow run main.nf \
+    --references test/data/mn908947.fa \
+    --reads test/data
+```
 
 ## Outputs
 

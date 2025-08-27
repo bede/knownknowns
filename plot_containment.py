@@ -12,7 +12,7 @@ import pandas as pd
 
 def natural_sort_key(text):
     """Generate a sort key for natural sorting of strings with numbers."""
-    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", text)]
+    return tuple(int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", text))
 
 
 def main():
