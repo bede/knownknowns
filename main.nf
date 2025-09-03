@@ -76,6 +76,7 @@ process calculate_containment {
     sourmash search \\
         --max-containment \\
         -t 0.0 \\
+        -n -0 \\
         -o containment.csv \\
         reads_signature.sig \\
         ${refs_sig}
