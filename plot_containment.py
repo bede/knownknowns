@@ -119,7 +119,15 @@ def create_single_plot(args):
         df = df.sort_values("sort_key")
         df = df.drop("sort_key", axis=1)
 
-        chart = (
+        # Create text labels for median abundance (if column exists)
+        if "median_abund" in df.columns:
+            # Format the median abundance values
+            df["depth_label"] = df["median_abund"].apply(
+                lambda x: f"median depth: {x:.0f}" if pd.notna(x) else "median depth: 0"
+            )
+
+        # Create the bar chart
+        bars = (
             alt.Chart(df)
             .mark_bar(size=8)
             .encode(
@@ -130,13 +138,42 @@ def create_single_plot(args):
                 tooltip=["query_name:N", "containment:Q"]
                 + (["query_md5:N"] if "query_md5" in df.columns else []),
             )
-            .properties(
+        )
+
+        # Add text labels if median abundance exists
+        if "median_abund" in df.columns:
+            text_labels = (
+                alt.Chart(df)
+                .mark_text(
+                    align="left",
+                    baseline="middle",
+                    dx=5,  # Position just after the x-axis origin
+                    fontSize=10,
+                    color="black",
+                )
+                .encode(
+                    y=alt.Y("query_name:N", sort=list(df["query_name"])),
+                    x=alt.value(0),  # Position at x=0 (origin)
+                    text="depth_label:N",
+                )
+            )
+
+            # Layer the charts and add properties
+            chart = (
+                (bars + text_labels)
+                .properties(
+                    width=600,
+                    height=alt.Step(20),
+                    title=f"{args.title_prefix + ' ' if args.title_prefix else ''}containment (k={args.kmer})",
+                )
+                .resolve_scale(y="shared")
+            )
+        else:
+            chart = bars.properties(
                 width=600,
                 height=alt.Step(20),
                 title=f"{args.title_prefix + ' ' if args.title_prefix else ''}containment (k={args.kmer})",
-            )
-            .resolve_scale(y="independent")
-        )
+            ).resolve_scale(y="independent")
 
         chart.save(args.output_plot, scale_factor=2)
         print(f"Plot saved to: {args.output_plot}")
@@ -244,8 +281,15 @@ def create_plot_from_combined_csv(args):
     # Get naturally sorted unique short names for y-axis ordering
     short_name_order = sorted(combined_df["short_name"].unique(), key=natural_sort_key)
 
-    # Create the combined chart
-    chart = (
+    # Create text labels for median abundance (if column exists)
+    if "median_abund" in combined_df.columns:
+        # Format the median abundance values
+        combined_df["depth_label"] = combined_df["median_abund"].apply(
+            lambda x: f"median depth: {x:.0f}" if pd.notna(x) else "median depth: 0"
+        )
+
+    # Create the combined bar chart
+    bars = (
         alt.Chart(combined_df)
         .mark_bar(size=8)
         .encode(
@@ -257,13 +301,43 @@ def create_plot_from_combined_csv(args):
             yOffset=alt.YOffset("barcode:N", sort=barcode_order),
             tooltip=["short_name:N", "containment:Q", "barcode:N"],
         )
-        .properties(
+    )
+
+    # Add text labels if median abundance exists
+    if "median_abund" in combined_df.columns:
+        text_labels = (
+            alt.Chart(combined_df)
+            .mark_text(
+                align="left",
+                baseline="middle",
+                dx=5,  # Position just after the x-axis origin
+                fontSize=8,
+                color="black",
+            )
+            .encode(
+                y=alt.Y("short_name:N", sort=short_name_order),
+                yOffset=alt.YOffset("barcode:N", sort=barcode_order),
+                x=alt.value(0),  # Position at x=0 (origin)
+                text="depth_label:N",
+            )
+        )
+
+        # Layer the charts and add properties
+        chart = (
+            (bars + text_labels)
+            .properties(
+                title=f"Combined containment (k={args.kmer})",
+                width=400,
+                height=alt.Step(8),
+            )
+            .resolve_scale(y="shared")
+        )
+    else:
+        chart = bars.properties(
             title=f"Combined containment (k={args.kmer})",
             width=400,
             height=alt.Step(8),
-        )
-        .resolve_scale(y="independent")
-    )
+        ).resolve_scale(y="independent")
 
     chart.save(args.output_plot, scale_factor=2.0)
     print(f"Combined plot saved to: {args.output_plot}")
