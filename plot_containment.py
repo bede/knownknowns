@@ -97,7 +97,7 @@ def create_single_plot(args):
 
         alt.data_transformers.enable("json")
 
-        required_cols = ["name", "similarity"]
+        required_cols = ["query_name", "containment"]
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
             print(f"ERROR: Missing required columns: {missing_cols}")
@@ -113,7 +113,9 @@ def create_single_plot(args):
             else:
                 return name.split(" ")[0]  # First part (whole name if no space)
 
-        df["sort_key"] = df["name"].apply(lambda x: natural_sort_key(get_sort_key(x)))
+        df["sort_key"] = df["query_name"].apply(
+            lambda x: natural_sort_key(get_sort_key(x))
+        )
         df = df.sort_values("sort_key")
         df = df.drop("sort_key", axis=1)
 
@@ -121,12 +123,12 @@ def create_single_plot(args):
             alt.Chart(df)
             .mark_bar(size=8)
             .encode(
-                y=alt.Y("name:N", title="", sort=list(df["name"])),
+                y=alt.Y("query_name:N", title="", sort=list(df["query_name"])),
                 x=alt.X(
-                    "similarity:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
+                    "containment:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
                 ),
-                tooltip=["name:N", "similarity:Q"]
-                + (["md5:N"] if "md5" in df.columns else []),
+                tooltip=["query_name:N", "containment:Q"]
+                + (["query_md5:N"] if "query_md5" in df.columns else []),
             )
             .properties(
                 width=600,
@@ -182,7 +184,11 @@ def create_combined_csv(args):
     for csv_file in args.input_csv:
         if os.path.exists(csv_file) and os.path.getsize(csv_file) > 0:
             df = pd.read_csv(csv_file)
-            if not df.empty and "name" in df.columns and "similarity" in df.columns:
+            if (
+                not df.empty
+                and "query_name" in df.columns
+                and "containment" in df.columns
+            ):
                 # Extract sample name from filename
                 sample_name = os.path.basename(csv_file).replace(".csv", "")
                 df = df.assign(barcode=sample_name)
@@ -191,7 +197,7 @@ def create_combined_csv(args):
     if not dfs:
         print("No valid CSV files found")
         # Create empty CSV file to satisfy Nextflow output requirement
-        empty_df = pd.DataFrame(columns=["name", "similarity", "barcode"])
+        empty_df = pd.DataFrame(columns=["query_name", "containment", "barcode"])
         empty_df.to_csv(args.output_csv, index=False)
         print(f"Empty CSV saved to: {args.output_csv}")
         return False
@@ -222,7 +228,7 @@ def create_plot_from_combined_csv(args):
             return name.split(" ", 1)[1]
         return name
 
-    combined_df["short_name"] = combined_df["name"].apply(extract_short_name)
+    combined_df["short_name"] = combined_df["query_name"].apply(extract_short_name)
 
     # Get unique sample names for ordering using natural sorting
     barcode_order = sorted(combined_df["barcode"].unique(), key=natural_sort_key)
@@ -245,14 +251,14 @@ def create_plot_from_combined_csv(args):
         .encode(
             y=alt.Y("short_name:N", title="", sort=short_name_order),
             x=alt.X(
-                "similarity:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
+                "containment:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
             ),
             color=alt.Color("barcode", sort=barcode_order, title=""),
             yOffset=alt.YOffset("barcode:N", sort=barcode_order),
-            tooltip=["short_name:N", "similarity:Q", "barcode:N"],
+            tooltip=["short_name:N", "containment:Q", "barcode:N"],
         )
         .properties(
-            title=f"Combined containment analysis (k={args.kmer})",
+            title=f"Combined containment (k={args.kmer})",
             width=400,
             height=alt.Step(8),
         )

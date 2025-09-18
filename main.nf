@@ -50,7 +50,7 @@ process sketch_reads {
     script:
     """
     sourmash scripts singlesketch \\
-        -p k=${params.kmer},scaled=${params.scaled},noabund,dna \\
+        -p k=${params.kmer},scaled=${params.scaled},abund,dna \\
         -o reads.sig \\
         ${reads}
     """
@@ -73,13 +73,10 @@ process calculate_containment {
 
     script:
     """
-    sourmash search \\
-        --max-containment \\
-        -t 0.0 \\
-        -n -0 \\
+    sourmash scripts manysearch \\
         -o containment.csv \\
-        reads_signature.sig \\
-        ${refs_sig}
+        ${refs_sig} \\
+        reads_signature.sig
     """
 }
 
