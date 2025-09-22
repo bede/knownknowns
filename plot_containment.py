@@ -34,6 +34,12 @@ def main():
         "--kmer", type=int, default=31, help="K-mer length used for sketching"
     )
     parser.add_argument(
+        "--min-depth", type=int, default=1, help="Minimum depth used for filtering"
+    )
+    parser.add_argument(
+        "--scaled", type=int, default=100, help="Scaled value used for sketching"
+    )
+    parser.add_argument(
         "--combined",
         action="store_true",
         help="Create combined plot from multiple CSV files",
@@ -159,20 +165,32 @@ def create_single_plot(args):
             )
 
             # Layer the charts and add properties
+            # Build title with scaled and min_depth (if > 1)
+            title_parts = [f"scaled={args.scaled}"]
+            if args.min_depth > 1:
+                title_parts.append(f"min_depth={args.min_depth}")
+            title = f"{args.title_prefix + ' ' if args.title_prefix else ''}(k={args.kmer}, {', '.join(title_parts)})"
+
             chart = (
                 (bars + text_labels)
                 .properties(
                     width=600,
                     height=alt.Step(20),
-                    title=f"{args.title_prefix + ' ' if args.title_prefix else ''}containment (k={args.kmer})",
+                    title=title,
                 )
                 .resolve_scale(y="shared")
             )
         else:
+            # Build title with scaled and min_depth (if > 1)
+            title_parts = [f"scaled={args.scaled}"]
+            if args.min_depth > 1:
+                title_parts.append(f"min_depth={args.min_depth}")
+            title = f"{args.title_prefix + ' ' if args.title_prefix else ''}(k={args.kmer}, {', '.join(title_parts)})"
+
             chart = bars.properties(
                 width=600,
                 height=alt.Step(20),
-                title=f"{args.title_prefix + ' ' if args.title_prefix else ''}containment (k={args.kmer})",
+                title=title,
             ).resolve_scale(y="independent")
 
         chart.save(args.output_plot, scale_factor=2)
@@ -323,18 +341,30 @@ def create_plot_from_combined_csv(args):
         )
 
         # Layer the charts and add properties
+        # Build title with scaled and min_depth (if > 1)
+        title_parts = [f"scaled={args.scaled}"]
+        if args.min_depth > 1:
+            title_parts.append(f"min_depth={args.min_depth}")
+        title = f"k={args.kmer}, {', '.join(title_parts)}"
+
         chart = (
             (bars + text_labels)
             .properties(
-                title=f"Combined containment (k={args.kmer})",
+                title=title,
                 width=400,
                 height=alt.Step(8),
             )
             .resolve_scale(y="shared")
         )
     else:
+        # Build title with scaled and min_depth (if > 1)
+        title_parts = [f"scaled={args.scaled}"]
+        if args.min_depth > 1:
+            title_parts.append(f"min_depth={args.min_depth}")
+        title = f"k={args.kmer}, {', '.join(title_parts)}"
+
         chart = bars.properties(
-            title=f"Combined containment (k={args.kmer})",
+            title=title,
             width=400,
             height=alt.Step(8),
         ).resolve_scale(y="independent")

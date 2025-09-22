@@ -9,6 +9,7 @@ params.outdir = "results"
 params.kmer = 31
 params.scaled = 100
 params.plot = true
+params.min_depth = 1
 
 if (!params.references) {
     error "Please provide a references file with --references"
@@ -53,6 +54,25 @@ process sketch_reads {
         -p k=${params.kmer},scaled=${params.scaled},abund,dna \\
         -o reads.sig \\
         ${reads}
+    """
+}
+
+// Filter reads signatures by abundance threshold
+process filter_abundance {
+    conda 'bioconda::sourmash conda-forge::sourmash_plugin_branchwater'
+
+    input:
+    tuple path(reads), path(reads_sig)
+
+    output:
+    tuple path(reads), path("reads.filtered.sig")
+
+    script:
+    """
+    sourmash sig filter \\
+        --min-abundance ${params.min_depth} \\
+        -o reads.filtered.sig \\
+        ${reads_sig}
     """
 }
 
@@ -101,6 +121,8 @@ process plot {
         --output-csv ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')}.csv \\
         --title-prefix ${reads.baseName.replaceAll(/\.(fastq|fq)$/, '')} \\
         --kmer ${params.kmer} \\
+        --scaled ${params.scaled} \\
+        --min-depth ${params.min_depth} \\
         ${params.plot ? '' : '--no-plot'}
     """
 }
@@ -126,6 +148,8 @@ process plot_combined {
         --output-csv containment.csv \\
         --combined \\
         --kmer ${params.kmer} \\
+        --scaled ${params.scaled} \\
+        --min-depth ${params.min_depth} \\
         ${params.plot ? '' : '--no-plot'}
     """
 }
@@ -155,8 +179,11 @@ workflow {
         reads_with_sig = sketch_reads(reads_ch)
     }
 
+    // Filter reads by abundance threshold
+    filtered_reads_with_sig = filter_abundance(reads_with_sig)
+
     // Main workflow: containment calculation and visualization
-    containment_with_reads = calculate_containment(reads_with_sig, refs_sig.first())
+    containment_with_reads = calculate_containment(filtered_reads_with_sig, refs_sig.first())
 
     if (params.plot) {
         (plot_pngs, plot_csvs) = plot(containment_with_reads, plot_script_ch.first())
