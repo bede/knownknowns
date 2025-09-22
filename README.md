@@ -2,7 +2,7 @@
 
 > [there are known knowns; there are things we know we know](https://en.wikipedia.org/wiki/There_are_unknown_unknowns)
 
-Conceived for validating positive control samples, this is a workflow for estimating and plotting the containment of sequences in a fasta file (`--references`) for either a FASTQ file or a directory of FASTQ files (`--reads`). A minimum depth threshold  (`--min_depth`) may be specified, and plots are annotated with estimated depth of coverage. Outputs containment values and abundance estimates in CSV format and plots in PNG format. Specifiy *k*-mer length with `--kmer`  (default 31) and sketch resolution with `--scaled` (default 100).
+Conceived for validating positive control samples, this is a workflow for estimating and plotting *k*-mer containment of sequences in a fasta file (`--references`) within a FASTQ file or a directory of FASTQ files (`--reads`). Plots are annotated with median depth of *k*-mer coverage, and an optional `--min_depth` threshold for displayed containment may be provided. Outputs containment values and abundance estimates in CSV format and plots in PNG format. Specifiy *k*-mer length with `--kmer`  (default 31) and sketch resolution with `--scaled` (default 100).
 
 ## Requirements
 

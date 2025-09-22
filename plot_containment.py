@@ -129,7 +129,7 @@ def create_single_plot(args):
         if "median_abund" in df.columns:
             # Format the median abundance values
             df["depth_label"] = df["median_abund"].apply(
-                lambda x: f"median depth: {x:.0f}" if pd.notna(x) else "median depth: 0"
+                lambda x: f"depth: ~{x:.0f}" if pd.notna(x) else "depth: ~0"
             )
 
         # Create the bar chart
@@ -303,7 +303,7 @@ def create_plot_from_combined_csv(args):
     if "median_abund" in combined_df.columns:
         # Format the median abundance values
         combined_df["depth_label"] = combined_df["median_abund"].apply(
-            lambda x: f"median depth: {x:.0f}" if pd.notna(x) else "median depth: 0"
+            lambda x: f"depth: ~{x:.0f}" if pd.notna(x) else "depth: ~0"
         )
 
     # Create the combined bar chart
@@ -315,7 +315,12 @@ def create_plot_from_combined_csv(args):
             x=alt.X(
                 "containment:Q", title="Containment", scale=alt.Scale(domain=[0, 1])
             ),
-            color=alt.Color("barcode", sort=barcode_order, title=""),
+            color=alt.Color(
+                "barcode",
+                sort=barcode_order,
+                title="",
+                scale=alt.Scale(scheme="category20"),
+            ),
             yOffset=alt.YOffset("barcode:N", sort=barcode_order),
             tooltip=["short_name:N", "containment:Q", "barcode:N"],
         )
