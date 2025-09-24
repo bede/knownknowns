@@ -68,12 +68,17 @@ process filter_abundance {
     tuple path(reads), path("reads.filtered.sig")
 
     script:
-    """
-    sourmash sig filter \\
-        --min-abundance ${params.min_depth} \\
-        -o reads.filtered.sig \\
-        ${reads_sig}
-    """
+    if (params.min_depth == 1)
+        """
+        cp ${reads_sig} reads.filtered.sig
+        """
+    else
+        """
+        sourmash sig filter \\
+            --min-abundance ${params.min_depth} \\
+            -o reads.filtered.sig \\
+            ${reads_sig}
+        """
 }
 
 // Calculate containment between reads and references
